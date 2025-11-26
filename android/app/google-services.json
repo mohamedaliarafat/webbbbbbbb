@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "843078322062",
+    "project_id": "albuhairaalarabia2026",
+    "storage_bucket": "albuhairaalarabia2026.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:843078322062:android:c25b7867804e0bc0b686df",
+        "android_client_info": {
+          "package_name": "albuhaira.a1999.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBv4UoP6mT2XGsXd3cT9wULDpP-PX7YGA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:843078322062:android:88759a95945e73b1b686df",
+        "android_client_info": {
+          "package_name": "com.example.customer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBv4UoP6mT2XGsXd3cT9wULDpP-PX7YGA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
