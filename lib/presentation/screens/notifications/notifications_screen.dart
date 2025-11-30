@@ -1,11 +1,12 @@
-// presentation/screens/notifications/notifications_screen.dart
+
 import 'package:customer/bloc/notification_bloc.dart';
+import 'package:customer/data/models/notification_model.dart';
+import 'package:customer/presentation/screens/notifications/notification_details_screen.dart';
+import 'package:customer/presentation/widgets/notification/notification_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:customer/data/models/notification_model.dart';
-import 'package:customer/presentation/widgets/notification/notification_item.dart';
-import 'package:customer/presentation/screens/notifications/notification_details_screen.dart';
+import 'package:provider/provider.dart';
 
 
 class NotificationsScreen extends StatefulWidget {
@@ -375,7 +376,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   int _getUnreadCount(NotificationState state) {
     if (state is NotificationLoaded) {
-      return state.notifications.where((notification) => !notification.isRead).length;
+      return state.notifications.where((notification) => !notification!.isRead).length;
     }
     return 0;
   }

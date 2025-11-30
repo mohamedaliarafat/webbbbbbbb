@@ -1,8 +1,14 @@
-// main.dart - النسخة النهائية المحدثة
+// main.dart - النسخة النهائية المحدثة والمتوافقة مع الويب ✅
+
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:customer/bloc/notification_bloc.dart';
 import 'package:customer/core/constants/app_router.dart';
+import 'package:customer/core/services/api_service.dart';
+import 'package:customer/core/services/payment_service.dart';
 import 'package:customer/core/theme/app_theme.dart';
 import 'package:customer/data/datasources/local_datasource.dart';
+import 'package:customer/data/repositories/fuel_transfer_repository.dart';
 import 'package:customer/firebase_options.dart';
 import 'package:customer/presentation/providers/address_provider.dart';
 import 'package:customer/presentation/providers/cart_provider.dart';
@@ -10,16 +16,13 @@ import 'package:customer/presentation/providers/chat_provider.dart';
 import 'package:customer/presentation/providers/company_provider.dart';
 import 'package:customer/presentation/providers/complete_profile_provider.dart';
 import 'package:customer/presentation/providers/fuel_transfer_provider.dart';
+import 'package:customer/presentation/providers/language_provider.dart';
 import 'package:customer/presentation/providers/location_provider.dart';
 import 'package:customer/presentation/providers/notification_provider.dart';
 import 'package:customer/presentation/providers/order_provider.dart';
 import 'package:customer/presentation/providers/payment_provider.dart';
 import 'package:customer/presentation/providers/product_provider.dart';
-import 'package:customer/presentation/providers/language_provider.dart';
-import 'package:customer/core/services/api_service.dart';
-import 'package:customer/data/repositories/fuel_transfer_repository.dart';
 import 'package:customer/services/firebase_service.dart';
-import 'package:customer/core/services/payment_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -36,13 +39,16 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // ✅ تهيئة Stripe قبل أي شيء
-  print('💳 Initializing Stripe...');
-  Stripe.publishableKey = 'pk_test_51SXLdo8WSqRur5EqdnU4CBk4JtBYaR2RHvMBwT5S2z1mW7aPXSzqIni5d4jAqBwLffWuURnTHS1BtGmzDN3bzzhl001qUP1aGo';
-  Stripe.merchantIdentifier = 'merchant.com.yourapp';
-  await Stripe.instance.applySettings();
-  
-  print('✅ Stripe initialized successfully');
+  // ✅ تهيئة Stripe قبل أي شيء (تُتخطى على الويب)
+  if (!kIsWeb) {
+    print('💳 Initializing Stripe...');
+    Stripe.publishableKey = 'pk_test_51SXLdo8WSqRur5EqdnU4CBk4JtBYaR2RHvMBwT5S2z1mW7aPXSzqIni5d4jAqBwLffWuURnTHS1BtGmzDN3bzzhl001qUP1aGo';
+    Stripe.merchantIdentifier = 'merchant.com.yourapp';
+    await Stripe.instance.applySettings();
+    print('✅ Stripe initialized successfully');
+  } else {
+    print('🌐 Skipping Stripe initialization on Web');
+  }
 
   // ✅ تهيئة ApiService
   print('🌐 Initializing ApiService...');
@@ -51,7 +57,12 @@ void main() async {
   
   await LocalDataSource().init();
   
-  await _initializeNotifications();
+  // ✅ تهيئة الإشعارات (تُتخطى على الويب)
+  if (!kIsWeb) {
+    await _initializeNotifications();
+  } else {
+    print('🌐 Skipping Firebase Notifications on Web');
+  }
   
   print('✅ Firebase initialized successfully - Apps count: ${Firebase.apps.length}');
 
@@ -111,18 +122,34 @@ class MyApp extends StatelessWidget {
             },
           ),
         ],
-        child: MaterialApp(
-          title: 'تطبيق الوقود',
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          initialRoute: '/splash',
-          onGenerateRoute: AppRouter.generateRoute,
-          navigatorKey: AppRouter.navigatorKey,
-          debugShowCheckedModeBanner: false,
-          builder: (context, child) {
-            return _AppWrapper(child: child!);
-          },
-        ),
+       child: MaterialApp(
+  title: 'تطبيق الوقود',
+  theme: AppTheme.lightTheme,
+  darkTheme: AppTheme.darkTheme,
+  initialRoute: kIsWeb ? '/' : '/splash',
+  onGenerateRoute: AppRouter.generateRoute,
+  navigatorKey: AppRouter.navigatorKey,
+  debugShowCheckedModeBanner: false,
+  builder: (context, child) {
+    // ✅ fallback للويب فقط لو المسار فشل
+    return _AppWrapper(
+      child: child ??
+          (kIsWeb
+              ? Scaffold(
+                  appBar: AppBar(title: const Text('Fuel App Web')),
+                  body: const Center(
+                    child: Text(
+                      '🚀 Fuel App Web is running successfully!',
+                      style: TextStyle(fontSize: 18),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink()),
+    );
+  },
+),
+
       ),
     );
   }
@@ -150,7 +177,9 @@ class _AppWrapperState extends State<_AppWrapper> with WidgetsBindingObserver {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _setupNotificationListeners();
+    if (!kIsWeb) {
+      _setupNotificationListeners();
+    }
   }
 
   @override
@@ -161,6 +190,8 @@ class _AppWrapperState extends State<_AppWrapper> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (kIsWeb) return; // ✅ تجاهل لحالات دورة الحياة على الويب
+
     switch (state) {
       case AppLifecycleState.resumed:
         _onAppResumed();
@@ -198,12 +229,14 @@ class _AppWrapperState extends State<_AppWrapper> with WidgetsBindingObserver {
   }
 
   void _checkInitialNotification() {
+    if (kIsWeb) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAuthState();
     });
   }
 
   void _checkAuthState() {
+    if (kIsWeb) return;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (authProvider.isLoggedIn) {
       print('👤 User is logged in, loading notifications...');
@@ -213,6 +246,7 @@ class _AppWrapperState extends State<_AppWrapper> with WidgetsBindingObserver {
   }
 
   void _checkPendingNotifications() {
+    if (kIsWeb) return;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (authProvider.isLoggedIn) {
       final notificationBloc = context.read<NotificationBloc>();
@@ -223,10 +257,7 @@ class _AppWrapperState extends State<_AppWrapper> with WidgetsBindingObserver {
   void _initializeAppServices() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       print('⚙️ Initializing additional app services...');
-      
-      // يمكن إضافة تهيئة الخدمات الإضافية هنا
       final paymentService = PaymentService();
-      
       print('✅ All app services initialized successfully');
     });
   }

@@ -1,11 +1,10 @@
 // presentation/providers/notification_provider.dart
 import 'dart:convert';
-
-import 'package:flutter/foundation.dart';
-import 'package:customer/data/models/notification_model.dart';
 import 'package:customer/core/services/notification_service.dart';
 import 'package:customer/core/services/storage_service.dart';
+import 'package:customer/data/models/notification_model.dart';
 import 'package:customer/data/models/user_model.dart';
+import 'package:flutter/foundation.dart';
 
 class NotificationProvider with ChangeNotifier {
   final NotificationService _notificationService = NotificationService();

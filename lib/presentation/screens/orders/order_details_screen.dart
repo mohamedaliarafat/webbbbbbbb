@@ -1251,11 +1251,11 @@
 
 import 'dart:ui';
 
+import 'package:customer/data/models/fuel_order_model.dart';
+import 'package:customer/presentation/providers/order_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:customer/presentation/providers/order_provider.dart';
-import 'package:customer/data/models/fuel_order_model.dart';
 
 class OrderDetailsScreen extends StatelessWidget {
   final String orderId;

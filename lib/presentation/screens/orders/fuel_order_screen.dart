@@ -1038,11 +1038,11 @@
 
 import 'dart:ui';
 
+
 import 'package:customer/data/models/address_model.dart';
 import 'package:customer/presentation/providers/address_provider.dart';
 import 'package:customer/presentation/providers/complete_profile_provider.dart';
 import 'package:customer/presentation/providers/order_provider.dart';
-import 'package:customer/presentation/providers/user_provider.dart';
 import 'package:customer/presentation/screens/auth/complete_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';

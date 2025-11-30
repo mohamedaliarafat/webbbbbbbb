@@ -1,9 +1,11 @@
 // providers/fuel_transfer_provider.dart
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:customer/core/services/api_service.dart';
 import 'package:customer/data/models/fuel_transfer_model.dart';
 import 'package:customer/data/repositories/fuel_transfer_repository.dart';
-import 'package:customer/core/services/api_service.dart';
+
+import 'package:flutter/material.dart';
+
 
 class FuelTransferProvider with ChangeNotifier {
   final FuelTransferRepository _repository;

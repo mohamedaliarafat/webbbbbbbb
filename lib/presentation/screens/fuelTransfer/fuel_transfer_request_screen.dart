@@ -1,16 +1,15 @@
 // screens/fuel_transfer/fuel_transfer_request_screen.dart
 import 'dart:io';
-import 'package:customer/core/services/payment_service.dart';
 import 'package:customer/data/models/address_model.dart';
 import 'package:customer/presentation/providers/address_provider.dart';
 import 'package:customer/presentation/providers/fuel_transfer_provider.dart';
+import 'package:customer/presentation/screens/fuelTransfer/fuel_transfer_orders_screen.dart';
 import 'package:customer/presentation/screens/payment/stripe_payment_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:customer/data/models/fuel_transfer_model.dart';
-import 'package:customer/presentation/screens/fuelTransfer/fuel_transfer_orders_screen.dart';
+
 
 class FuelTransferRequestScreen extends StatefulWidget {
   const FuelTransferRequestScreen({super.key});

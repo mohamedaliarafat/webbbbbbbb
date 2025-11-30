@@ -1,5 +1,4 @@
 import 'package:customer/data/models/complete_profile_model.dart';
-import 'package:customer/presentation/providers/auth_provider.dart';
 import 'package:customer/presentation/providers/complete_profile_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';

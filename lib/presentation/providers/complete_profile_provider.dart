@@ -1,9 +1,10 @@
 import 'dart:io';
 
+
 import 'package:customer/data/datasources/local_datasource.dart';
 import 'package:customer/data/models/complete_profile_model.dart';
-import 'package:customer/data/models/location_model.dart';
 import 'package:customer/data/repositories/complete_profile_repository.dart';
+
 import 'package:flutter/foundation.dart';
 
 class CompleteProfileProvider with ChangeNotifier {
