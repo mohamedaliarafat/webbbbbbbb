@@ -151,11 +151,11 @@ class OrderCard extends StatelessWidget {
 
         if (_hasDriver()) ...[
           const SizedBox(height: 10),
-          _buildGlassInfoRow(
-            icon: Icons.person,
-            text: 'السائق: ${_getDriverName()}',
-            iconColor: Colors.purple,
-          ),
+          // _buildGlassInfoRow(
+          //   icon: Icons.person,
+          //   // text: 'السائق: ${_getDriverName()}',
+          //   iconColor: Colors.purple,
+          // ),
         ],
 
         if (orderType == 'fuel') ...[
@@ -481,7 +481,7 @@ class OrderCard extends StatelessWidget {
       ? (order as FuelOrderModel).driverId != null
       : (order as FuelOrderModel).driverId != null;
 
-  String _getDriverName() => 'محمد أحمد';
+  // String _getDriverName() => 'محمد أحمد';
 
   String _getFuelLiters() => orderType == 'fuel' ? (order as FuelOrderModel).fuelLiters.toString() : '';
 

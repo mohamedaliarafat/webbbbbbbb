@@ -4,7 +4,7 @@ class AppConfig {
   static const String appDescription = "تطبيق طلبات الوقود والتوصيل";
   
   // البيئات
-  static const String baseUrl = "https://back-end-2222222222222222222.onrender.com/api";
+  static const String baseUrl = "http://192.168.8.26:6016/api";
   static const bool isProduction = bool.fromEnvironment('dart.vm.product');
   
   // إعدادات التطبيق

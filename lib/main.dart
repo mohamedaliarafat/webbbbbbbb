@@ -1,6 +1,6 @@
-// main.dart - النسخة النهائية المحدثة والمتوافقة مع الويب ✅
+// main.dart - النسخة النهائية المتوافقة مع الويب والجوال ✅
 
-import 'dart:io' show Platform;
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:customer/bloc/notification_bloc.dart';
 import 'package:customer/core/constants/app_router.dart';
@@ -122,34 +122,42 @@ class MyApp extends StatelessWidget {
             },
           ),
         ],
-       child: MaterialApp(
-  title: 'تطبيق الوقود',
-  theme: AppTheme.lightTheme,
-  darkTheme: AppTheme.darkTheme,
-  initialRoute: kIsWeb ? '/' : '/splash',
-  onGenerateRoute: AppRouter.generateRoute,
-  navigatorKey: AppRouter.navigatorKey,
-  debugShowCheckedModeBanner: false,
-  builder: (context, child) {
-    // ✅ fallback للويب فقط لو المسار فشل
-    return _AppWrapper(
-      child: child ??
-          (kIsWeb
+        child: MaterialApp(
+          title: 'تطبيق الوقود',
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          debugShowCheckedModeBanner: false,
+          navigatorKey: AppRouter.navigatorKey,
+          onGenerateRoute: AppRouter.generateRoute,
+          // ✅ على الويب نبدأ من الصفحة الرئيسية مباشرة
+          initialRoute: kIsWeb ? '/' : '/splash',
+          builder: (context, child) {
+            return _AppWrapper(child: child ?? const SizedBox());
+          },
+          // ✅ واجهة افتراضية للويب (في حال لم تُعرف المسارات)
+          home: kIsWeb
               ? Scaffold(
-                  appBar: AppBar(title: const Text('Fuel App Web')),
-                  body: const Center(
-                    child: Text(
-                      '🚀 Fuel App Web is running successfully!',
-                      style: TextStyle(fontSize: 18),
-                      textAlign: TextAlign.center,
+                  backgroundColor: Colors.white,
+                  appBar: AppBar(
+                    backgroundColor: Colors.teal,
+                    centerTitle: true,
+                    title: const Text('Fuel App Web'),
+                  ),
+                  body: const SafeArea(
+                    child: Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Text(
+                          '🚀 Fuel App Web is running successfully on Mobile & Desktop!',
+                          style: TextStyle(fontSize: 18),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                     ),
                   ),
                 )
-              : const SizedBox.shrink()),
-    );
-  },
-),
-
+              : null,
+        ),
       ),
     );
   }

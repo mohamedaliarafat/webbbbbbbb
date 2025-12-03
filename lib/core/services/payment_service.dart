@@ -22,125 +22,125 @@ class PaymentService {
     }
   }
 
-  // ✅ دفع Stripe حقيقي مع Debug مفصل
-  Future<Map<String, dynamic>> createStripePayment({
-    required double amount,
-    required String currency,
-    required String orderId,
-  }) async {
-    try {
-      print('💳 بدء عملية الدفع عبر Stripe...');
-      print('💰 المبلغ: $amount $currency');
-      print('🆔 رقم الطلب: $orderId');
+ Future<Map<String, dynamic>> createStripePayment({
+  required double amount,
+  required String currency,
+  required String orderId,
+}) async {
+  try {
+    print('💳 بدء عملية الدفع عبر Stripe...');
+    print('💰 المبلغ: $amount $currency');
+    print('🆔 رقم الطلب: $orderId');
 
-      // 1. إنشاء Payment Intent في السيرفر
-      print('📡 جاري الاتصال بالسيرفر لإنشاء Payment Intent...');
-      
-      final response = await _apiService.post(
-        '/create-payment-intent',
-        data: {
-          'amount': (amount * 100).toInt(), // تحويل لـ cents
-          'currency': currency.toLowerCase(),
-          'orderId': orderId,
-        },
-      );
+    // 1. إنشاء Payment Intent في السيرفر
+    print('📡 جاري الاتصال بالسيرفر لإنشاء Payment Intent...');
+    
+    // ✅ التصحيح: استخدم /pay/create-payment-intent
+    final response = await _apiService.post(
+      '/pay/create-payment-intent', // ⬅️ تم التصحيح هنا
+      data: {
+        'amount': (amount * 100).toInt(),
+        'currency': currency.toLowerCase(),
+        'orderId': orderId,
+      },
+    );
 
-      print('📨 استجابة السيرفر: ${response.toString()}');
+    print('📨 استجابة السيرفر: ${response.toString()}');
 
-      if (response['success'] != true) {
-        final errorMsg = response['error'] ?? response['message'] ?? 'فشل في إنشاء Payment Intent';
-        print('❌ فشل استجابة السيرفر: $errorMsg');
-        return {
-          'success': false,
-          'error': errorMsg,
-        };
-      }
-
-      final clientSecret = response['data']['clientSecret'];
-      final paymentIntentId = response['data']['paymentIntentId'];
-
-      if (clientSecret == null || clientSecret.isEmpty) {
-        print('❌ clientSecret فارغ أو غير صالح');
-        return {
-          'success': false,
-          'error': 'لم يتم استلام مفتاح الدفع من السيرفر',
-        };
-      }
-
-      print('🔑 تم استلام clientSecret بنجاح');
-
-      // 2. تهيئة صفحة الدفع
-      print('🎯 جاري تهيئة صفحة الدفع...');
-      await Stripe.instance.initPaymentSheet(
-        paymentSheetParameters: SetupPaymentSheetParameters(
-          paymentIntentClientSecret: clientSecret,
-          merchantDisplayName: 'تطبيق الوقود',
-          style: ThemeMode.dark,
-          applePay: const PaymentSheetApplePay(
-            merchantCountryCode: 'SA',
-          ),
-          googlePay: PaymentSheetGooglePay(
-            merchantCountryCode: 'SA',
-            currencyCode: currency,
-            testEnv: true,
-          ),
-        ),
-      );
-
-      print('✅ تم تهيئة صفحة الدفع بنجاح');
-
-      // 3. عرض صفحة الدفع
-      print('🔄 جاري عرض صفحة الدفع...');
-      await Stripe.instance.presentPaymentSheet();
-
-      print('✅ تم الدفع بنجاح عبر Stripe');
-
-      // 4. تأكيد الدفع في السيرفر
-      print('📡 جاري تأكيد الدفع في السيرفر...');
-      final confirmResponse = await _apiService.post(
-        '/confirm-payment',
-        data: {
-          'paymentIntentId': paymentIntentId,
-          'orderId': orderId,
-        },
-      );
-
-      if (confirmResponse['success'] == true) {
-        print('🎉 تم تأكيد الدفع بنجاح في السيرفر');
-        return {
-          'success': true,
-          'message': 'تم الدفع بنجاح',
-          'data': confirmResponse['data'],
-          'transactionId': paymentIntentId,
-        };
-      } else {
-        final confirmError = confirmResponse['error'] ?? confirmResponse['message'] ?? 'فشل في تأكيد الدفع';
-        print('❌ فشل تأكيد الدفع: $confirmError');
-        return {
-          'success': false,
-          'error': confirmError,
-        };
-      }
-
-    } on StripeException catch (e) {
-      print('❌ خطأ Stripe: ${e.error.code} - ${e.error.message}');
-      print('❌ تفاصيل الخطأ: ${e.toString()}');
+    if (response['success'] != true) {
+      final errorMsg = response['error'] ?? response['message'] ?? 'فشل في إنشاء Payment Intent';
+      print('❌ فشل استجابة السيرفر: $errorMsg');
       return {
         'success': false,
-        'error': _handleStripeError(e),
-        'errorCode': e.error.code?.name,
-      };
-    } catch (e) {
-      print('❌ خطأ غير متوقع في الدفع: $e');
-      print('❌ نوع الخطأ: ${e.runtimeType}');
-      print('❌ StackTrace: ${e.toString()}');
-      return {
-        'success': false,
-        'error': 'فشل في عملية الدفع: ${e.toString()}',
+        'error': errorMsg,
       };
     }
-  }
 
+    final clientSecret = response['data']['clientSecret'];
+    final paymentIntentId = response['data']['paymentIntentId'];
+
+    if (clientSecret == null || clientSecret.isEmpty) {
+      print('❌ clientSecret فارغ أو غير صالح');
+      return {
+        'success': false,
+        'error': 'لم يتم استلام مفتاح الدفع من السيرفر',
+      };
+    }
+
+    print('🔑 تم استلام clientSecret بنجاح');
+
+    // 2. تهيئة صفحة الدفع
+    print('🎯 جاري تهيئة صفحة الدفع...');
+    await Stripe.instance.initPaymentSheet(
+      paymentSheetParameters: SetupPaymentSheetParameters(
+        paymentIntentClientSecret: clientSecret,
+        merchantDisplayName: 'تطبيق الوقود',
+        style: ThemeMode.dark,
+        applePay: const PaymentSheetApplePay(
+          merchantCountryCode: 'SA',
+        ),
+        googlePay: PaymentSheetGooglePay(
+          merchantCountryCode: 'SA',
+          currencyCode: currency,
+          testEnv: true,
+        ),
+      ),
+    );
+
+    print('✅ تم تهيئة صفحة الدفع بنجاح');
+
+    // 3. عرض صفحة الدفع
+    print('🔄 جاري عرض صفحة الدفع...');
+    await Stripe.instance.presentPaymentSheet();
+
+    print('✅ تم الدفع بنجاح عبر Stripe');
+
+    // 4. تأكيد الدفع في السيرفر
+    print('📡 جاري تأكيد الدفع في السيرفر...');
+    // ✅ التصحيح: استخدم /pay/confirm-payment
+    final confirmResponse = await _apiService.post(
+      '/pay/confirm-payment', // ⬅️ تم التصحيح هنا
+      data: {
+        'paymentIntentId': paymentIntentId,
+        'orderId': orderId,
+      },
+    );
+
+    if (confirmResponse['success'] == true) {
+      print('🎉 تم تأكيد الدفع بنجاح في السيرفر');
+      return {
+        'success': true,
+        'message': 'تم الدفع بنجاح',
+        'data': confirmResponse['data'],
+        'transactionId': paymentIntentId,
+      };
+    } else {
+      final confirmError = confirmResponse['error'] ?? confirmResponse['message'] ?? 'فشل في تأكيد الدفع';
+      print('❌ فشل تأكيد الدفع: $confirmError');
+      return {
+        'success': false,
+        'error': confirmError,
+      };
+    }
+
+  } on StripeException catch (e) {
+    print('❌ خطأ Stripe: ${e.error.code} - ${e.error.message}');
+    print('❌ تفاصيل الخطأ: ${e.toString()}');
+    return {
+      'success': false,
+      'error': _handleStripeError(e),
+      'errorCode': e.error.code?.name,
+    };
+  } catch (e) {
+    print('❌ خطأ غير متوقع في الدفع: $e');
+    print('❌ نوع الخطأ: ${e.runtimeType}');
+    print('❌ StackTrace: ${e.toString()}');
+    return {
+      'success': false,
+      'error': 'فشل في عملية الدفع: ${e.toString()}',
+    };
+  }
+}
   // ✅ معالجة أخطاء Stripe بشكل مفصل
   String _handleStripeError(StripeException e) {
     switch (e.error.code) {

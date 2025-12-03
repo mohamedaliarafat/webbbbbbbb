@@ -1303,15 +1303,17 @@ class _FuelOrderScreenState extends State<FuelOrderScreen> {
     );
   }
 
-  // التحقق من وجود طلبات غير مكتملة
-  bool _hasIncompleteOrders(OrderProvider orderProvider) {
-    return orderProvider.fuelOrders.any((order) {
-      return order.status == 'pending' || 
-             order.status == 'accepted' || 
-             order.status == 'assigned' ||
-             order.status == 'on_the_way';
-    });
-  }
+ bool _hasIncompleteOrders(OrderProvider orderProvider) {
+  final incompleteCount = orderProvider.fuelOrders.where((order) {
+    return order.status == 'pending' || 
+           order.status == 'accepted' || 
+           order.status == 'assigned' ||
+           order.status == 'on_the_way';
+  }).length;
+
+  return incompleteCount >= 10; // 👈 يمنع لو عنده طلبين أو أكثر
+}
+
 
   // دالة التحقق من إمكانية تقديم الطلب (محدثة)
   bool _canSubmitOrder(CompleteProfileProvider completeProfileProvider, OrderProvider orderProvider) {

@@ -455,7 +455,6 @@ import 'package:customer/presentation/screens/chat/chat_screen.dart';
 import 'package:customer/presentation/screens/fuelTransfer/fuel_transfer_request_screen.dart';
 import 'package:customer/presentation/screens/home/companies_list_screen.dart';
 import 'package:customer/presentation/screens/home/home_screen.dart';
-import 'package:customer/presentation/screens/notifications/notifications_screen.dart';
 import 'package:customer/presentation/screens/orders/fuel_order_screen.dart';
 import 'package:customer/presentation/screens/orders/order_details_screen.dart';
 import 'package:customer/presentation/screens/orders/orders_list_screen.dart';

@@ -1,9 +1,11 @@
 import 'package:customer/data/models/fuel_transfer_model.dart';
 import 'package:customer/presentation/providers/fuel_transfer_provider.dart';
+import 'package:customer/presentation/providers/language_provider.dart';
 import 'package:customer/presentation/screens/fuelTransfer/fuel_transfer_request_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-
+import 'package:intl/intl.dart';
 
 class FuelTransferOrdersScreen extends StatefulWidget {
   const FuelTransferOrdersScreen({super.key});
@@ -32,66 +34,111 @@ class _FuelTransferOrdersScreenState extends State<FuelTransferOrdersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
+    final languageProvider = Provider.of<LanguageProvider>(context);
+    
+    return Directionality(
+      textDirection: languageProvider.textDirection,
+      child: Scaffold(
         backgroundColor: Colors.black,
-        title: const Text(
-          'طلبات نقل الوقود',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+        appBar: AppBar(
+  backgroundColor: Colors.black,
+  elevation: 0,
+  leading: IconButton(
+    icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+    onPressed: () => Navigator.pop(context),
+  ),
+  title: Text(
+    languageProvider.translate('fuel_transfer_orders'),
+    style: GoogleFonts.cairo(
+      color: Colors.white,
+      fontWeight: FontWeight.bold,
+      fontSize: 18,
+    ),
+  ),
+  actions: [
+    _buildLanguageButton(languageProvider),
+    const SizedBox(width: 8),
+    IconButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const FuelTransferRequestScreen(),
           ),
+        );
+      },
+      icon: Icon(Icons.add, color: Colors.white),
+      tooltip: languageProvider.translate('add_new_order'),
+    ),
+    const SizedBox(width: 16),
+  ],
+),
+
+        body: Consumer<FuelTransferProvider>(
+          builder: (context, provider, child) {
+            if (provider.isLoading && provider.orders.isEmpty) {
+              return _buildLoading(languageProvider);
+            }
+
+            if (provider.error != null) {
+              return _buildError(provider.error!, provider, languageProvider);
+            }
+
+            return Column(
+              children: [
+                _buildFilterButtons(languageProvider, provider),
+                Expanded(child: _buildOrdersList(provider, languageProvider)),
+              ],
+            );
+          },
         ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const FuelTransferRequestScreen(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.add, color: Colors.white),
-          ),
-        ],
-      ),
-      body: Consumer<FuelTransferProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading && provider.orders.isEmpty) {
-            return _buildLoading();
-          }
-
-          if (provider.error != null) {
-            return _buildError(provider.error!, provider);
-          }
-
-          return Column(
-            children: [
-              _buildFilterButtons(provider),
-              Expanded(child: _buildOrdersList(provider)),
-            ],
-          );
-        },
       ),
     );
   }
 
-  Widget _buildFilterButtons(FuelTransferProvider provider) {
+  Widget _buildLanguageButton(LanguageProvider languageProvider) {
+    return GestureDetector(
+      onTap: () => _showLanguageDialog(context, languageProvider),
+      child: Container(
+        width: 40,
+        height: 40,
+        margin: EdgeInsets.only(right: 8),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.3),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+        ),
+        child: Center(
+          child: Text(
+            languageProvider.getCurrentLanguageFlag(),
+            style: TextStyle(fontSize: 20),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterButtons(LanguageProvider languageProvider, FuelTransferProvider provider) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.3),
+        border: Border(
+          bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
+        ),
+      ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
             const SizedBox(width: 16),
-            _buildFilterChip('الكل', 'all', provider),
-            _buildFilterChip('قيد المراجعة', 'pending', provider),
-            _buildFilterChip('تم الموافقة', 'approved', provider),
-            _buildFilterChip('قيد التوصيل', 'out_for_delivery', provider),
-            _buildFilterChip('مكتمل', 'completed', provider),
-            _buildFilterChip('ملغي', 'cancelled', provider),
+            _buildFilterChip(languageProvider.translate('all_orders'), 'all', languageProvider, provider),
+            _buildFilterChip(languageProvider.translate('pending_review'), 'pending', languageProvider, provider),
+            _buildFilterChip(languageProvider.translate('approved'), 'approved', languageProvider, provider),
+            _buildFilterChip(languageProvider.translate('out_for_delivery'), 'out_for_delivery', languageProvider, provider),
+            _buildFilterChip(languageProvider.translate('completed'), 'completed', languageProvider, provider),
+            _buildFilterChip(languageProvider.translate('cancelled'), 'cancelled', languageProvider, provider),
+            _buildFilterChip(languageProvider.translate('rejected'), 'rejected', languageProvider, provider),
             const SizedBox(width: 16),
           ],
         ),
@@ -99,15 +146,16 @@ class _FuelTransferOrdersScreenState extends State<FuelTransferOrdersScreen> {
     );
   }
 
-  Widget _buildFilterChip(String label, String value, FuelTransferProvider provider) {
+  Widget _buildFilterChip(String label, String value, LanguageProvider languageProvider, FuelTransferProvider provider) {
     final isSelected = _selectedFilter == value;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4),
       child: ChoiceChip(
         label: Text(
           label,
-          style: TextStyle(
+          style: GoogleFonts.cairo(
             color: isSelected ? Colors.black : Colors.white,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
         selected: isSelected,
@@ -123,59 +171,80 @@ class _FuelTransferOrdersScreenState extends State<FuelTransferOrdersScreen> {
     );
   }
 
-  Widget _buildLoading() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(color: Colors.blue),
-          SizedBox(height: 16),
-          Text(
-            'جاري تحميل الطلبات...',
-            style: TextStyle(color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildError(String error, FuelTransferProvider provider) {
+  Widget _buildLoading(LanguageProvider languageProvider) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, color: Colors.red, size: 64),
+          const CircularProgressIndicator(color: Colors.blue),
           const SizedBox(height: 16),
-          const Text(
-            'حدث خطأ',
-            style: TextStyle(color: Colors.white, fontSize: 18),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              error,
-              style: const TextStyle(color: Colors.grey),
-              textAlign: TextAlign.center,
+          Text(
+            languageProvider.translate('loading_orders'),
+            style: GoogleFonts.cairo(
+              color: Colors.grey,
+              fontSize: 14,
             ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _loadOrders,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('إعادة المحاولة'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildOrdersList(FuelTransferProvider provider) {
+  Widget _buildError(String error, FuelTransferProvider provider, LanguageProvider languageProvider) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, color: Colors.red, size: 64),
+            SizedBox(height: 16),
+            Text(
+              languageProvider.translate('error_occurred'),
+              style: GoogleFonts.cairo(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                error,
+                style: GoogleFonts.cairo(
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadOrders,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+              ),
+              child: Text(
+                languageProvider.translate('retry'),
+                style: GoogleFonts.cairo(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrdersList(FuelTransferProvider provider, LanguageProvider languageProvider) {
     if (provider.orders.isEmpty) {
-      return _buildEmptyState();
+      return _buildEmptyState(languageProvider);
     }
 
     return RefreshIndicator(
@@ -186,13 +255,13 @@ class _FuelTransferOrdersScreenState extends State<FuelTransferOrdersScreen> {
         padding: const EdgeInsets.all(16),
         itemCount: provider.orders.length,
         itemBuilder: (context, index) {
-          return _buildOrderCard(provider.orders[index], provider);
+          return _buildOrderCard(provider.orders[index], provider, languageProvider);
         },
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(LanguageProvider languageProvider) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -203,25 +272,33 @@ class _FuelTransferOrdersScreenState extends State<FuelTransferOrdersScreen> {
               color: Colors.black.withOpacity(0.6),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: Colors.blue.withOpacity(0.3)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.blue.withOpacity(0.2),
+                  blurRadius: 20,
+                  spreadRadius: 1,
+                ),
+              ],
             ),
-            child: const Icon(
+            child: Icon(
               Icons.inbox_outlined,
               size: 80,
               color: Colors.grey,
             ),
           ),
-          const SizedBox(height: 20),
-          const Text(
-            'لا توجد طلبات',
-            style: TextStyle(
+          SizedBox(height: 20),
+          Text(
+            languageProvider.translate('no_orders'),
+            style: GoogleFonts.cairo(
               color: Colors.grey,
               fontSize: 18,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'انقر على أيقونة + لإنشاء طلب جديد',
-            style: TextStyle(
+          SizedBox(height: 8),
+          Text(
+            languageProvider.translate('click_plus_to_create'),
+            style: GoogleFonts.cairo(
               color: Colors.grey,
               fontSize: 14,
             ),
@@ -231,11 +308,18 @@ class _FuelTransferOrdersScreenState extends State<FuelTransferOrdersScreen> {
     );
   }
 
-  Widget _buildOrderCard(FuelTransferRequest order, FuelTransferProvider provider) {
+  Widget _buildOrderCard(FuelTransferRequest order, FuelTransferProvider provider, LanguageProvider languageProvider) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.black.withOpacity(0.6),
+            Colors.black.withOpacity(0.4),
+          ],
+        ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withOpacity(0.1)),
         boxShadow: [
@@ -243,6 +327,11 @@ class _FuelTransferOrdersScreenState extends State<FuelTransferOrdersScreen> {
             color: Colors.black.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
+          ),
+          BoxShadow(
+            color: Colors.blue.withOpacity(0.1),
+            blurRadius: 10,
+            spreadRadius: 1,
           ),
         ],
       ),
@@ -257,38 +346,43 @@ class _FuelTransferOrdersScreenState extends State<FuelTransferOrdersScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        order.company,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          order.company,
+                          style: GoogleFonts.cairo(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'رقم الطلب: #${order.id}',
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 12,
+                        SizedBox(height: 4),
+                        Text(
+                          '${languageProvider.translate('order_number')}: #${order.id}',
+                          style: GoogleFonts.cairo(
+                            color: Colors.grey[400],
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  SizedBox(width: 12),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(order.status as String).withOpacity(0.2),
+                      color: order.statusColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: _getStatusColor(order.status as String)),
+                      border: Border.all(color: order.statusColor),
                     ),
                     child: Text(
-                      _getStatusText(order.status as String),
-                      style: TextStyle(
-                        color: _getStatusColor(order.status as String),
+                      order.statusText,
+                      style: GoogleFonts.cairo(
+                        color: order.statusColor,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -296,26 +390,50 @@ class _FuelTransferOrdersScreenState extends State<FuelTransferOrdersScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               
               // Order Details
-              _buildOrderDetailRow('الكمية', '${order.quantity} لتر'),
+              _buildOrderDetailRow(
+                languageProvider.translate('quantity'), 
+                '${order.quantity} ${languageProvider.translate('liters')}',
+                languageProvider,
+              ),
               if (order.totalAmount > 0)
-                _buildOrderDetailRow('المبلغ', '${order.totalAmount.toStringAsFixed(2)} ريال'),
-              _buildOrderDetailRow('طريقة الدفع', order.paymentMethod),
-              _buildOrderDetailRow('موقع التوصيل', order.deliveryLocation),
-              _buildOrderDetailRow('تاريخ الطلب', _formatDate(order.createdAt)),
+                _buildOrderDetailRow(
+                  languageProvider.translate('amount'), 
+                  '${order.totalAmount.toStringAsFixed(2)} ${languageProvider.translate('sar')}',
+                  languageProvider,
+                ),
+              _buildOrderDetailRow(
+                languageProvider.translate('payment_method'), 
+                order.paymentMethod,
+                languageProvider,
+              ),
+              _buildOrderDetailRow(
+                languageProvider.translate('delivery_location'), 
+                order.deliveryLocation,
+                languageProvider,
+              ),
+              _buildOrderDetailRow(
+                languageProvider.translate('order_date'), 
+                _formatDate(order.createdAt),
+                languageProvider,
+              ),
               
               if (order.rejectionReason != null && order.rejectionReason!.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                _buildOrderDetailRow('سبب الرفض', order.rejectionReason!),
+                SizedBox(height: 8),
+                _buildOrderDetailRow(
+                  languageProvider.translate('rejection_reason'), 
+                  order.rejectionReason!,
+                  languageProvider,
+                ),
               ],
               
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               
               // Actions
-              if (_canBeCancelled(order.status as String))
-                _buildCancelButton(order, provider),
+              if (order.canBeCancelled)
+                _buildCancelButton(order, provider, languageProvider),
             ],
           ),
         ),
@@ -323,7 +441,7 @@ class _FuelTransferOrdersScreenState extends State<FuelTransferOrdersScreen> {
     );
   }
 
-  Widget _buildOrderDetailRow(String label, String value) {
+  Widget _buildOrderDetailRow(String label, String value, LanguageProvider languageProvider) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -331,17 +449,22 @@ class _FuelTransferOrdersScreenState extends State<FuelTransferOrdersScreen> {
         children: [
           Text(
             label,
-            style: TextStyle(
+            style: GoogleFonts.cairo(
               color: Colors.grey[400],
               fontSize: 14,
             ),
           ),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+          Expanded(
+            child: Text(
+              value,
+              style: GoogleFonts.cairo(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.end,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -349,117 +472,222 @@ class _FuelTransferOrdersScreenState extends State<FuelTransferOrdersScreen> {
     );
   }
 
-  Widget _buildCancelButton(FuelTransferRequest order, FuelTransferProvider provider) {
+  Widget _buildCancelButton(FuelTransferRequest order, FuelTransferProvider provider, LanguageProvider languageProvider) {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton(
-        onPressed: () => _showCancelDialog(order, provider),
+        onPressed: () => _showCancelDialog(order, provider, languageProvider),
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.red,
           side: const BorderSide(color: Colors.red),
           padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
-        child: const Text('إلغاء الطلب'),
+        child: Text(
+          languageProvider.translate('cancel_order'),
+          style: GoogleFonts.cairo(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }
 
-  void _showCancelDialog(FuelTransferRequest order, FuelTransferProvider provider) {
+  void _showCancelDialog(FuelTransferRequest order, FuelTransferProvider provider, LanguageProvider languageProvider) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: const Text(
-          'إلغاء الطلب',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Text(
-          'هل أنت متأكد من إلغاء هذا الطلب؟',
-          style: TextStyle(color: Colors.grey),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'تراجع',
-              style: TextStyle(color: Colors.blue),
+      builder: (context) => Directionality(
+        textDirection: languageProvider.textDirection,
+        child: AlertDialog(
+          backgroundColor: Colors.grey[900],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            languageProvider.translate('cancel_order'),
+            style: GoogleFonts.cairo(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              final success = await provider.cancelOrder(order.id);
-              if (success && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('تم إلغاء الطلب بنجاح'),
-                    backgroundColor: Colors.green,
+          content: Text(
+            languageProvider.translate('cancel_order_confirmation'),
+            style: GoogleFonts.cairo(
+              color: Colors.grey,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                languageProvider.translate('go_back'),
+                style: GoogleFonts.cairo(
+                  color: Colors.blue,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                final success = await provider.cancelOrder(order.id);
+                if (success && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        languageProvider.translate('order_cancelled_success'),
+                        style: GoogleFonts.cairo(),
+                      ),
+                      backgroundColor: Colors.green,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  );
+                  _loadOrders();
+                } else if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        provider.error ?? languageProvider.translate('order_cancelled_failed'),
+                        style: GoogleFonts.cairo(),
+                      ),
+                      backgroundColor: Colors.red,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: Text(
+                languageProvider.translate('confirm_cancellation'),
+                style: GoogleFonts.cairo(
+                  color: Colors.red,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+ String _formatDate(DateTime date) {
+  try {
+    final format = DateFormat('dd/MM/yyyy HH:mm', 'ar');
+    return format.format(date);
+  } catch (e) {
+    debugPrint('Date format error: $e');
+    return date.toString(); // fallback
+  }
+}
+
+  void _showLanguageDialog(BuildContext context, LanguageProvider languageProvider) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return LanguageSelectionDialog(languageProvider: languageProvider);
+      },
+    );
+  }
+}
+
+// ============ LanguageSelectionDialog ============
+class LanguageSelectionDialog extends StatelessWidget {
+  final LanguageProvider languageProvider;
+
+  const LanguageSelectionDialog({
+    Key? key,
+    required this.languageProvider,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final languages = languageProvider.getAvailableLanguages();
+
+    return Container(
+      margin: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  languageProvider.translate('language'),
+                  style: GoogleFonts.cairo(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
-                );
-                _loadOrders();
-              } else if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(provider.error ?? 'فشل في إلغاء الطلب'),
-                    backgroundColor: Colors.red,
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Icon(Icons.close, color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+          
+          ListView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemCount: languages.length,
+            itemBuilder: (context, index) {
+              final lang = languages[index];
+              final isSelected = languageProvider.locale.languageCode == lang['code'];
+              
+              return ListTile(
+                onTap: () {
+                  languageProvider.changeLanguage(lang['locale']);
+                  Navigator.pop(context);
+                },
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected 
+                        ? Color(0xFF64B5F6).withOpacity(0.2)
+                        : Colors.grey.withOpacity(0.1),
                   ),
-                );
-              }
+                  child: Center(
+                    child: Text(
+                      lang['flag'],
+                      style: TextStyle(fontSize: 24),
+                    ),
+                  ),
+                ),
+                title: Text(
+                  lang['name'],
+                  style: GoogleFonts.cairo(
+                    color: isSelected ? Color(0xFF64B5F6) : Colors.white,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+                trailing: isSelected
+                    ? Icon(Icons.check_circle, color: Color(0xFF64B5F6))
+                    : null,
+              );
             },
-            child: const Text(
-              'تأكيد الإلغاء', 
-              style: TextStyle(color: Colors.red)
-            ),
           ),
+          
+          SizedBox(height: 20),
         ],
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-  }
-
-  // دوال مساعدة للحالة
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'pending':
-        return Colors.orange;
-      case 'approved':
-        return Colors.green;
-      case 'out_for_delivery':
-        return Colors.blue;
-      case 'completed':
-        return Colors.green;
-      case 'cancelled':
-        return Colors.red;
-      case 'rejected':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  String _getStatusText(String status) {
-    switch (status) {
-      case 'pending':
-        return 'قيد المراجعة';
-      case 'approved':
-        return 'تم الموافقة';
-      case 'out_for_delivery':
-        return 'قيد التوصيل';
-      case 'completed':
-        return 'مكتمل';
-      case 'cancelled':
-        return 'ملغي';
-      case 'rejected':
-        return 'مرفوض';
-      default:
-        return status;
-    }
-  }
-
-  bool _canBeCancelled(String status) {
-    return status == 'pending' || status == 'approved';
   }
 }

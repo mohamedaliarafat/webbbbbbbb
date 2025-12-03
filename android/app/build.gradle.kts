@@ -26,8 +26,8 @@ android {
         applicationId = "albuhaira.a1999.com"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = 4
-        versionName = "4.0.2"
+        versionCode = 5
+        versionName = "5.1.2"
         multiDexEnabled = true
     }
 

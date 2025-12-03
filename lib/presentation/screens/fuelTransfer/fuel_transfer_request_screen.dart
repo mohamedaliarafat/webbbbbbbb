@@ -1,15 +1,14 @@
-// screens/fuel_transfer/fuel_transfer_request_screen.dart
 import 'dart:io';
 import 'package:customer/data/models/address_model.dart';
 import 'package:customer/presentation/providers/address_provider.dart';
 import 'package:customer/presentation/providers/fuel_transfer_provider.dart';
+import 'package:customer/presentation/providers/language_provider.dart';
 import 'package:customer/presentation/screens/fuelTransfer/fuel_transfer_orders_screen.dart';
 import 'package:customer/presentation/screens/payment/stripe_payment_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-
 
 class FuelTransferRequestScreen extends StatefulWidget {
   const FuelTransferRequestScreen({super.key});
@@ -27,18 +26,15 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
   bool _isSubmitting = false;
   AddressModel? _selectedAddress;
 
-  final List<String> _companies = ['إنرجكس', 'نهل', 'بيتروجين'];
-
   final Map<String, double> _fuelPrices = {
-    'إنرجكس': 2.18,
-    'نهل': 2.25,
-    'بيتروجين': 2.32,
+    'energex': 2.18,
+    'nahal': 2.25,
+    'petrogen': 2.32,
   };
 
   @override
   void initState() {
     super.initState();
-    // تحميل العناوين عند بدء التشغيل
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final addressProvider = Provider.of<AddressProvider>(context, listen: false);
       addressProvider.loadAddresses();
@@ -47,76 +43,98 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final addressProvider = Provider.of<AddressProvider>(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
 
-    return Scaffold(
-      backgroundColor: Color(0xFF0A0E21),
-      appBar: AppBar(
-        backgroundColor: Color(0xFF1A237E),
-        title: Text(
-          'طلب نقل وقود',
-          style: GoogleFonts.cairo(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
+    return Directionality(
+      textDirection: languageProvider.textDirection,
+      child: Scaffold(
+        backgroundColor: Color(0xFF0A0E21),
+        appBar: AppBar(
+          backgroundColor: Color(0xFF1A237E),
+          title: Text(
+            languageProvider.translate('fuel_transfer_request'),
+            style: GoogleFonts.cairo(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
           ),
+          centerTitle: true,
+          elevation: 0,
+           leading: IconButton(
+    icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+    onPressed: () => Navigator.pop(context),
+  ),
+          actions: [
+            // أيقونة تغيير اللغة
+            Consumer<LanguageProvider>(
+              builder: (context, languageProvider, child) {
+                return GestureDetector(
+                  onTap: () => _showLanguageDialog(context, languageProvider),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    margin: EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.3),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    ),
+                    child: Center(
+                      child: Text(
+                        languageProvider.getCurrentLanguageFlag(),
+                        style: TextStyle(fontSize: 20),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            // أيقونة طلبات النقل
+            IconButton(
+              icon: Icon(Icons.list_alt, color: Colors.white),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => FuelTransferOrdersScreen(),
+                  ),
+                );
+              },
+              tooltip: languageProvider.translate('transfer_orders'),
+            ),
+          ],
         ),
-        centerTitle: true,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            if (_currentStep > 0) {
-              setState(() {
-                _currentStep--;
-              });
-            } else {
-              Navigator.pop(context);
-            }
-          },
-        ),
-        actions: [
-          // أيقونة طلبات النقل
-          IconButton(
-            icon: Icon(Icons.list_alt, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => FuelTransferOrdersScreen(),
-                ),
-              );
-            },
-            tooltip: 'طلبات النقل',
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF1A237E),
+                Color(0xFF283593),
+                Color(0xFF303F9F),
+              ],
+            ),
           ),
-        ],
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A237E),
-              Color(0xFF283593),
-              Color(0xFF303F9F),
-            ],
-          ),
+          child: _buildContent(context),
         ),
-        child: _buildContent(addressProvider),
       ),
     );
   }
 
-  Widget _buildContent(AddressProvider addressProvider) {
+  Widget _buildContent(BuildContext context) {
+    final addressProvider = Provider.of<AddressProvider>(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
+
     if (_currentStep == 0) {
-      return _buildInitialScreen();
+      return _buildInitialScreen(languageProvider);
     } else {
-      return _buildRequestForm(addressProvider);
+      return _buildRequestForm(addressProvider, languageProvider);
     }
   }
 
-  Widget _buildInitialScreen() {
+  Widget _buildInitialScreen(LanguageProvider languageProvider) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -157,7 +175,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
           const SizedBox(height: 40),
           
           Text(
-            'خدمة نقل الوقود',
+            languageProvider.translate('fuel_transfer_service'),
             style: GoogleFonts.cairo(
               color: Colors.white,
               fontSize: 28,
@@ -169,7 +187,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              'نقدم لكم خدمة نقل الوقود بأسعار تنافسية وخدمة سريعة من محطات أرامكو',
+              languageProvider.translate('service_description'),
               style: GoogleFonts.cairo(
                 color: Colors.white70,
                 fontSize: 16,
@@ -181,13 +199,13 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
           const SizedBox(height: 50),
           
           // أزرار الإجراءات السريعة
-          _buildQuickActions(),
+          _buildQuickActions(languageProvider),
         ],
       ),
     );
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildQuickActions(LanguageProvider languageProvider) {
     return Column(
       children: [
         // زر تقديم طلب نقل
@@ -216,7 +234,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                 Icon(Icons.add_circle_outline, size: 24),
                 SizedBox(width: 12),
                 Text(
-                  'تقديم طلب نقل',
+                  languageProvider.translate('submit_transfer_request'),
                   style: GoogleFonts.cairo(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -235,7 +253,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
             // زر تتبع الطلبات
             _buildQuickActionButton(
               icon: Icons.track_changes,
-              text: 'تتبع الطلب',
+              text: languageProvider.translate('track_order'),
               onTap: () {
                 Navigator.push(
                   context,
@@ -245,13 +263,14 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                 );
               },
               color: Colors.green,
+              languageProvider: languageProvider,
             ),
             SizedBox(width: 16),
             
             // زر طلبات النقل
             _buildQuickActionButton(
               icon: Icons.list_alt,
-              text: 'طلبات النقل',
+              text: languageProvider.translate('transfer_orders'),
               onTap: () {
                 Navigator.push(
                   context,
@@ -261,6 +280,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                 );
               },
               color: Colors.orange,
+              languageProvider: languageProvider,
             ),
           ],
         ),
@@ -273,6 +293,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
     required String text,
     required VoidCallback onTap,
     required Color color,
+    required LanguageProvider languageProvider,
   }) {
     return Container(
       width: 140,
@@ -306,10 +327,10 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
     );
   }
 
-  Widget _buildRequestForm(AddressProvider addressProvider) {
+  Widget _buildRequestForm(AddressProvider addressProvider, LanguageProvider languageProvider) {
     return Column(
       children: [
-        _buildProgressIndicator(),
+        _buildProgressIndicator(languageProvider),
         
         Expanded(
           child: SingleChildScrollView(
@@ -318,14 +339,14 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
               children: [
                 const SizedBox(height: 20),
                 
-                if (_currentStep == 1) _buildAramcoStep(),
-                if (_currentStep == 2) _buildCompanySelectionStep(),
-                if (_currentStep == 3) _buildInvoiceUploadStep(),
-                if (_currentStep == 4) _buildPriceAndLocationStep(addressProvider),
+                if (_currentStep == 1) _buildAramcoStep(languageProvider),
+                if (_currentStep == 2) _buildCompanySelectionStep(languageProvider),
+                if (_currentStep == 3) _buildInvoiceUploadStep(languageProvider),
+                if (_currentStep == 4) _buildPriceAndLocationStep(addressProvider, languageProvider),
                 
                 const SizedBox(height: 40),
                 
-                _buildNavigationButtons(),
+                _buildNavigationButtons(languageProvider),
               ],
             ),
           ),
@@ -334,7 +355,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
     );
   }
 
-  Widget _buildProgressIndicator() {
+  Widget _buildProgressIndicator(LanguageProvider languageProvider) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -361,7 +382,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _getStepTitle(index),
+                  _getStepTitle(index, languageProvider),
                   style: GoogleFonts.cairo(
                     color: isCurrent ? Color(0xFF7986CB) : Colors.white70,
                     fontSize: 12,
@@ -376,17 +397,17 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
     );
   }
 
-  String _getStepTitle(int index) {
+  String _getStepTitle(int index, LanguageProvider languageProvider) {
     switch (index) {
-      case 0: return 'أرامكو';
-      case 1: return 'الشركة';
-      case 2: return 'الفاتورة';
-      case 3: return 'السعر والموقع';
+      case 0: return languageProvider.translate('step_aramex');
+      case 1: return languageProvider.translate('step_company');
+      case 2: return languageProvider.translate('step_invoice');
+      case 3: return languageProvider.translate('step_price_location');
       default: return '';
     }
   }
 
-  Widget _buildAramcoStep() {
+  Widget _buildAramcoStep(LanguageProvider languageProvider) {
     return GlassCard(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -408,7 +429,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
             ),
             const SizedBox(height: 20),
             Text(
-              'طلب التعبئة من أرامكو',
+              languageProvider.translate('aramex_filling_request'),
               style: GoogleFonts.cairo(
                 color: Colors.white,
                 fontSize: 22,
@@ -417,7 +438,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'سيتم توجيه طلبك لمحطات أرامكو للتعبئة\nيرجى التأكد من توفر المستندات المطلوبة',
+              languageProvider.translate('aramex_description'),
               style: GoogleFonts.cairo(
                 color: Colors.white70,
                 fontSize: 16,
@@ -453,7 +474,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                     Icon(Icons.arrow_forward),
                     SizedBox(width: 8),
                     Text(
-                      'متابعة لاختيار الشركة',
+                      languageProvider.translate('continue_to_company'),
                       style: GoogleFonts.cairo(fontSize: 16),
                     ),
                   ],
@@ -466,7 +487,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
     );
   }
 
-  Widget _buildCompanySelectionStep() {
+  Widget _buildCompanySelectionStep(LanguageProvider languageProvider) {
     return Column(
       children: [
         GlassCard(
@@ -486,7 +507,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                     ),
                     SizedBox(width: 12),
                     Text(
-                      'اختر شركة الوقود',
+                      languageProvider.translate('select_fuel_company'),
                       style: GoogleFonts.cairo(
                         color: Colors.white,
                         fontSize: 20,
@@ -496,7 +517,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                   ],
                 ),
                 SizedBox(height: 20),
-                ..._companies.map((company) => _buildCompanyCard(company)),
+                ..._getCompanies(languageProvider).map((company) => _buildCompanyCard(company, languageProvider)),
               ],
             ),
           ),
@@ -505,9 +526,17 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
     );
   }
 
-  Widget _buildCompanyCard(String company) {
-    bool isSelected = _selectedCompany == company;
-    double price = _fuelPrices[company] ?? 0.0;
+  List<Map<String, dynamic>> _getCompanies(LanguageProvider languageProvider) {
+    return [
+      {'id': 'energex', 'name': languageProvider.translate('energex')},
+      {'id': 'nahal', 'name': languageProvider.translate('nahal')},
+      {'id': 'petrogen', 'name': languageProvider.translate('petrogen')},
+    ];
+  }
+
+  Widget _buildCompanyCard(Map<String, dynamic> company, LanguageProvider languageProvider) {
+    bool isSelected = _selectedCompany == company['id'];
+    double price = _fuelPrices[company['id']] ?? 0.0;
     
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -516,7 +545,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
         child: InkWell(
           onTap: () {
             setState(() {
-              _selectedCompany = company;
+              _selectedCompany = company['id'];
             });
           },
           borderRadius: BorderRadius.circular(15),
@@ -550,7 +579,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        company,
+                        company['name'],
                         style: GoogleFonts.cairo(
                           color: Colors.white,
                           fontSize: 16,
@@ -559,7 +588,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                       ),
                       SizedBox(height: 4),
                       Text(
-                        'سعر اللتر: ${price.toStringAsFixed(2)} ريال',
+                        '${languageProvider.translate('price_per_liter')}: ${price.toStringAsFixed(2)} ${languageProvider.translate('sar')}',
                         style: GoogleFonts.cairo(
                           color: Colors.green,
                           fontSize: 14,
@@ -581,7 +610,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
     );
   }
 
-  Widget _buildInvoiceUploadStep() {
+  Widget _buildInvoiceUploadStep(LanguageProvider languageProvider) {
     return GlassCard(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -599,7 +628,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                 ),
                 SizedBox(width: 12),
                 Text(
-                  'رفع الفاتورة',
+                  languageProvider.translate('upload_invoice'),
                   style: GoogleFonts.cairo(
                     color: Colors.white,
                     fontSize: 20,
@@ -627,7 +656,9 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                   ),
                   SizedBox(height: 16),
                   Text(
-                    _uploadedFile == null ? 'ارفق فاتورة أرامكو أو ما يثبت الطلب' : 'تم رفع الملف بنجاح',
+                    _uploadedFile == null 
+                      ? languageProvider.translate('upload_document_here')
+                      : languageProvider.translate('file_uploaded_success'),
                     style: GoogleFonts.cairo(
                       color: Colors.white,
                       fontSize: 16,
@@ -637,7 +668,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'PDF, JPG, PNG - الحد الأقصى 10MB',
+                    languageProvider.translate('supported_formats'),
                     style: GoogleFonts.cairo(
                       color: Colors.white70,
                       fontSize: 14,
@@ -649,16 +680,18 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                     children: [
                       _buildUploadButton(
                         icon: Icons.photo_library,
-                        text: 'المعرض',
+                        text: languageProvider.translate('gallery'),
                         onPressed: _pickImageFromGallery,
                         color: Color(0xFF7986CB),
+                        languageProvider: languageProvider,
                       ),
                       SizedBox(width: 12),
                       _buildUploadButton(
                         icon: Icons.camera_alt,
-                        text: 'الكاميرا',
+                        text: languageProvider.translate('camera'),
                         onPressed: _pickImageFromCamera,
                         color: Colors.green,
+                        languageProvider: languageProvider,
                       ),
                     ],
                   ),
@@ -682,7 +715,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                         foregroundColor: Colors.red,
                         side: BorderSide(color: Colors.red),
                       ),
-                      child: Text('إزالة الملف'),
+                      child: Text(languageProvider.translate('remove_file')),
                     ),
                   ],
                 ],
@@ -699,6 +732,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
     required String text,
     required VoidCallback onPressed,
     required Color color,
+    required LanguageProvider languageProvider,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -730,7 +764,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
     );
   }
 
-  Widget _buildPriceAndLocationStep(AddressProvider addressProvider) {
+  Widget _buildPriceAndLocationStep(AddressProvider addressProvider, LanguageProvider languageProvider) {
     if (_selectedCompany == null) return SizedBox();
     
     double pricePerLiter = _fuelPrices[_selectedCompany!] ?? 0.0;
@@ -760,7 +794,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                     ),
                     SizedBox(width: 12),
                     Text(
-                      'تفاصيل السعر',
+                      languageProvider.translate('price_details'),
                       style: GoogleFonts.cairo(
                         color: Colors.white,
                         fontSize: 20,
@@ -782,7 +816,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'كمية الوقود (لتر)',
+                        languageProvider.translate('fuel_quantity'),
                         style: GoogleFonts.cairo(
                           color: Colors.white,
                           fontSize: 16,
@@ -801,7 +835,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                           keyboardType: TextInputType.number,
                           style: GoogleFonts.cairo(color: Colors.white),
                           decoration: InputDecoration(
-                            hintText: 'أدخل الكمية المطلوبة',
+                            hintText: languageProvider.translate('enter_quantity'),
                             hintStyle: GoogleFonts.cairo(color: Colors.white54),
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -827,16 +861,37 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                     ),
                     child: Column(
                       children: [
-                        _buildPriceRow('سعر اللتر', '${pricePerLiter.toStringAsFixed(2)} ريال'),
-                        _buildPriceRow('الكمية', '${quantity.toStringAsFixed(0)} لتر'),
-                        _buildPriceRow('السعر الإجمالي', '${totalPrice.toStringAsFixed(2)} ريال'),
-                        _buildPriceRow('رسوم التوصيل', '${deliveryFee.toStringAsFixed(2)} ريال'),
-                        _buildPriceRow('الضريبة (15%)', '${vat.toStringAsFixed(2)} ريال'),
+                        _buildPriceRow(
+                          languageProvider.translate('price_per_liter'),
+                          '${pricePerLiter.toStringAsFixed(2)} ${languageProvider.translate('sar')}',
+                          languageProvider: languageProvider,
+                        ),
+                        _buildPriceRow(
+                          languageProvider.translate('quantity'),
+                          '${quantity.toStringAsFixed(0)} ${languageProvider.translate('liters')}',
+                          languageProvider: languageProvider,
+                        ),
+                        _buildPriceRow(
+                          languageProvider.translate('total_price'),
+                          '${totalPrice.toStringAsFixed(2)} ${languageProvider.translate('sar')}',
+                          languageProvider: languageProvider,
+                        ),
+                        _buildPriceRow(
+                          languageProvider.translate('delivery_fee'),
+                          '${deliveryFee.toStringAsFixed(2)} ${languageProvider.translate('sar')}',
+                          languageProvider: languageProvider,
+                        ),
+                        _buildPriceRow(
+                          languageProvider.translate('vat'),
+                          '${vat.toStringAsFixed(2)} ${languageProvider.translate('sar')}',
+                          languageProvider: languageProvider,
+                        ),
                         Divider(color: Colors.white.withOpacity(0.3)),
                         _buildPriceRow(
-                          'المبلغ الإجمالي',
-                          '${grandTotal.toStringAsFixed(2)} ريال',
+                          languageProvider.translate('grand_total'),
+                          '${grandTotal.toStringAsFixed(2)} ${languageProvider.translate('sar')}',
                           isTotal: true,
+                          languageProvider: languageProvider,
                         ),
                       ],
                     ),
@@ -867,7 +922,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                     ),
                     SizedBox(width: 12),
                     Text(
-                      'موقع التوصيل',
+                      languageProvider.translate('delivery_location'),
                       style: GoogleFonts.cairo(
                         color: Colors.white,
                         fontSize: 20,
@@ -885,9 +940,9 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                     ),
                   ),
                 ] else if (addressProvider.addresses.isEmpty) ...[
-                  _buildNoAddressesState(),
+                  _buildNoAddressesState(languageProvider),
                 ] else ...[
-                  _buildAddressesList(addressProvider),
+                  _buildAddressesList(addressProvider, languageProvider),
                 ],
               ],
             ),
@@ -897,13 +952,13 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
     );
   }
 
-  Widget _buildNoAddressesState() {
+  Widget _buildNoAddressesState(LanguageProvider languageProvider) {
     return Column(
       children: [
         Icon(Icons.location_off, size: 60, color: Colors.white70),
         SizedBox(height: 16),
         Text(
-          'لا توجد عناوين',
+          languageProvider.translate('no_addresses'),
           style: GoogleFonts.cairo(
             color: Colors.white,
             fontSize: 18,
@@ -912,7 +967,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
         ),
         SizedBox(height: 8),
         Text(
-          'يجب إضافة عنوان لتوصيل الوقود',
+          languageProvider.translate('add_address_message'),
           style: GoogleFonts.cairo(
             color: Colors.white70,
             fontSize: 14,
@@ -929,30 +984,30 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
           ),
           child: ElevatedButton(
             onPressed: () {
-              _showAddAddressMessage();
+              _showAddAddressMessage(languageProvider);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.transparent,
               foregroundColor: Colors.white,
             ),
-            child: Text('إضافة عنوان جديد'),
+            child: Text(languageProvider.translate('add_new_address')),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildAddressesList(AddressProvider addressProvider) {
+  Widget _buildAddressesList(AddressProvider addressProvider, LanguageProvider languageProvider) {
     return Column(
       children: [
         ...addressProvider.addresses.map((address) {
-          return _buildAddressCard(address, addressProvider);
+          return _buildAddressCard(address, addressProvider, languageProvider);
         }),
       ],
     );
   }
 
-  Widget _buildAddressCard(AddressModel address, AddressProvider addressProvider) {
+  Widget _buildAddressCard(AddressModel address, AddressProvider addressProvider, LanguageProvider languageProvider) {
     final isSelected = _selectedAddress?.id == address.id;
     
     return Container(
@@ -1030,7 +1085,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            'افتراضي',
+                            languageProvider.translate('default_address'),
                             style: GoogleFonts.cairo(
                               color: Colors.green,
                               fontSize: 10,
@@ -1066,7 +1121,10 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
     }
   }
 
-  Widget _buildPriceRow(String label, String value, {bool isTotal = false}) {
+  Widget _buildPriceRow(String label, String value, {
+    bool isTotal = false,
+    required LanguageProvider languageProvider,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -1093,7 +1151,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
     );
   }
 
-  Widget _buildNavigationButtons() {
+  Widget _buildNavigationButtons(LanguageProvider languageProvider) {
     return Row(
       children: [
         if (_currentStep > 1)
@@ -1119,7 +1177,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                   ),
                 ),
                 child: Text(
-                  'السابق',
+                  languageProvider.translate('previous'),
                   style: GoogleFonts.cairo(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -1148,7 +1206,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                     _currentStep++;
                   });
                 } else {
-                  _submitRequest();
+                  _submitRequest(languageProvider);
                 }
               } : null),
               style: ElevatedButton.styleFrom(
@@ -1159,7 +1217,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                   borderRadius: BorderRadius.circular(15),
                 ),
               ),
-              child: _buildButtonContent(),
+              child: _buildButtonContent(languageProvider),
             ),
           ),
         ),
@@ -1167,7 +1225,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
     );
   }
 
-  Widget _buildButtonContent() {
+  Widget _buildButtonContent(LanguageProvider languageProvider) {
     if (_isSubmitting) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1182,7 +1240,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
           ),
           SizedBox(width: 8),
           Text(
-            'جاري المعالجة...',
+            languageProvider.translate('processing'),
             style: GoogleFonts.cairo(),
           ),
         ],
@@ -1196,7 +1254,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
           Icon(Icons.payment, size: 20),
           SizedBox(width: 8),
           Text(
-            'الدفع عبر Stripe',
+            languageProvider.translate('pay_with_stripe'),
             style: GoogleFonts.cairo(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -1206,7 +1264,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
       );
     } else {
       return Text(
-        'التالي',
+        languageProvider.translate('next'),
         style: GoogleFonts.cairo(
           fontSize: 16,
           fontWeight: FontWeight.bold,
@@ -1227,8 +1285,8 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
     }
   }
 
-  Future<void> _submitRequest() async {
-    if (!_validatePaymentData()) return;
+  Future<void> _submitRequest(LanguageProvider languageProvider) async {
+    if (!_validatePaymentData(languageProvider)) return;
 
     setState(() {
       _isSubmitting = true;
@@ -1304,7 +1362,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
                     Icon(Icons.check_circle, color: Colors.white),
                     SizedBox(width: 8),
                     Text(
-                      'تم إنشاء الطلب والدفع بنجاح',
+                      languageProvider.translate('request_created_success'),
                       style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -1317,15 +1375,15 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
           }
         } else {
           print('❌ تم إلغاء الدفع');
-          _showError('تم إلغاء عملية الدفع');
+          _showError(languageProvider.translate('payment_cancelled'), languageProvider);
         }
       } else {
         print('❌ فشل في إنشاء الطلب: ${provider.error}');
-        _showError(provider.error ?? 'فشل في إنشاء الطلب - تأكد من اتصال الإنترنت');
+        _showError('${languageProvider.translate('request_failed')} - ${languageProvider.translate('no_internet')}', languageProvider);
       }
     } catch (e) {
       print('❌ خطأ غير متوقع: $e');
-      _showError('حدث خطأ غير متوقع: $e');
+      _showError('${languageProvider.translate('error')}: $e', languageProvider);
     } finally {
       if (mounted) {
         setState(() {
@@ -1375,7 +1433,7 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
     return double.parse((totalPrice + deliveryFee + vat).toStringAsFixed(2));
   }
 
-  void _showError(String message) {
+  void _showError(String message, LanguageProvider languageProvider) {
     if (!mounted) return;
     
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1397,35 +1455,35 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
     );
   }
 
-  void _showAddAddressMessage() {
+  void _showAddAddressMessage(LanguageProvider languageProvider) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('سيتم إضافة شاشة إضافة العناوين قريباً', style: GoogleFonts.cairo()),
+        content: Text(languageProvider.translate('feature_coming_soon'), style: GoogleFonts.cairo()),
         backgroundColor: Colors.blue,
         duration: Duration(seconds: 3),
       ),
     );
   }
 
-  bool _validatePaymentData() {
+  bool _validatePaymentData(LanguageProvider languageProvider) {
     if (_selectedCompany == null) {
-      _showError('يرجى اختيار شركة الوقود');
+      _showError(languageProvider.translate('select_company_error'), languageProvider);
       return false;
     }
     
     if (_quantityController.text.isEmpty || double.tryParse(_quantityController.text) == null) {
-      _showError('يرجى إدخال كمية صحيحة');
+      _showError(languageProvider.translate('enter_valid_quantity'), languageProvider);
       return false;
     }
     
     double quantity = double.parse(_quantityController.text);
     if (quantity <= 0) {
-      _showError('يجب أن تكون الكمية أكبر من الصفر');
+      _showError(languageProvider.translate('quantity_greater_than_zero'), languageProvider);
       return false;
     }
     
     if (_selectedAddress == null) {
-      _showError('يرجى اختيار عنوان التوصيل');
+      _showError(languageProvider.translate('select_delivery_address'), languageProvider);
       return false;
     }
     
@@ -1447,7 +1505,8 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
         });
       }
     } catch (e) {
-      _showError('فشل في اختيار الصورة: $e');
+      final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+      _showError('${languageProvider.translate('image_selection_failed')}: $e', languageProvider);
     }
   }
 
@@ -1466,8 +1525,23 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
         });
       }
     } catch (e) {
-      _showError('فشل في التقاط الصورة: $e');
+      final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+      _showError('${languageProvider.translate('camera_failed')}: $e', languageProvider);
     }
+  }
+
+  void _showLanguageDialog(BuildContext context, LanguageProvider languageProvider) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return Directionality(
+          textDirection: languageProvider.textDirection,
+          child: LanguageSelectionDialog(languageProvider: languageProvider),
+        );
+      },
+    );
   }
 
   @override
@@ -1477,6 +1551,101 @@ class _FuelTransferRequestScreenState extends State<FuelTransferRequestScreen> {
   }
 }
 
+// ============ LanguageSelectionDialog ============
+class LanguageSelectionDialog extends StatelessWidget {
+  final LanguageProvider languageProvider;
+
+  const LanguageSelectionDialog({
+    Key? key,
+    required this.languageProvider,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final languages = languageProvider.getAvailableLanguages();
+
+    return Container(
+      margin: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  languageProvider.translate('change_language'),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Icon(Icons.close, color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+          
+          ListView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemCount: languages.length,
+            itemBuilder: (context, index) {
+              final lang = languages[index];
+              final isSelected = languageProvider.locale.languageCode == lang['code'];
+              
+              return ListTile(
+                onTap: () {
+                  languageProvider.changeLanguage(lang['locale']);
+                  Navigator.pop(context);
+                },
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected 
+                        ? Color(0xFF7986CB).withOpacity(0.2)
+                        : Colors.grey.withOpacity(0.1),
+                  ),
+                  child: Center(
+                    child: Text(
+                      lang['flag'],
+                      style: TextStyle(fontSize: 24),
+                    ),
+                  ),
+                ),
+                title: Text(
+                  lang['name'],
+                  style: TextStyle(
+                    color: isSelected ? Color(0xFF7986CB) : Colors.white,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+                trailing: isSelected
+                    ? Icon(Icons.check_circle, color: Color(0xFF7986CB))
+                    : null,
+              );
+            },
+          ),
+          
+          SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+}
+
+// ============ GlassCard ============
 class GlassCard extends StatelessWidget {
   final Widget child;
   final EdgeInsets? padding;

@@ -119,7 +119,11 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icons/icon-01.png"
+  image_path: "assets/icons/icon-app.png"
+  remove_alpha_ios: true
+  adaptive_icon_background: "#0046FF" # ← غيّر اللون هنا (لون يغطي كامل الأيقونة)
+  adaptive_icon_foreground: "assets/icons/icon-app.png"
+
 
 flutter:
   uses-material-design: true

@@ -4,7 +4,7 @@ import './local_datasource.dart';
 
 class RemoteDataSource {
   final LocalDataSource _localDataSource = LocalDataSource();
-  static const String baseUrl = 'https://back-end-2222222222222222222.onrender.com/api';
+  static const String baseUrl = 'http://192.168.8.26:6016/api';
 
   var dio; // Change to your backend URL
   

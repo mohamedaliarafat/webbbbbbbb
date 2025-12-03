@@ -5,6 +5,7 @@ class AddressModel {
   final String userId;
   final String addressLine1;
   final String addressLine2;
+  final AddressModel? deliveryAddress;
   final String city;
   final String district;
   final String state;
@@ -21,6 +22,7 @@ class AddressModel {
   final DateTime updatedAt;
 
   AddressModel({
+    this.deliveryAddress,
     required this.id,
     required this.userId,
     required this.addressLine1,

@@ -5,7 +5,7 @@ class AppConstants {
   static const String appBuildNumber = '1';
 
   // API Configuration
-  static const String baseUrl = 'https://back-end-2222222222222222222.onrender.com/api'; // Change to your backend URL
+  static const String baseUrl = 'http://192.168.8.26:6016/api'; // Change to your backend URL
   static const int apiTimeout = 30000; // 30 seconds
   static const int receiveTimeout = 30000;
   static const int sendTimeout = 30000;

@@ -20,8 +20,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   late AnimationController _animationController;
 
   // مجموعة الألوان
-  final List<Color> _colorList1 = [const Color(0xFF4B77BE), const Color(0xFF67B26F)];
-  final List<Color> _colorList2 = [const Color(0xFF67B26F), const Color(0xFF4B77BE)];
+  final List<Color> _colorList1 = [const Color(0xFF4B77BE), const Color(0xE3E3E3)];
+  final List<Color> _colorList2 = [const Color(0x002455), const Color(0xFF4B77BE)];
 
   @override
   void initState() {
