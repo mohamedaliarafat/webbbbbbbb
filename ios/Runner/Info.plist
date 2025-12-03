@@ -45,5 +45,24 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<!-- 🔔 إشعارات -->
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
+
+	<!-- 📍 الموقع -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>يحتاج التطبيق للوصول إلى موقعك أثناء الاستخدام لتحديد نقاط الاستلام والتسليم.</string>
+
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>يحتاج التطبيق للوصول إلى موقعك لتتبع الطلبات حتى في الخلفية.</string>
+
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>نستخدم موقعك لتحديث حالة الطلب في الوقت الحقيقي.</string>
 </dict>
 </plist>
